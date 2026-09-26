@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface Comment {
   id: string;
@@ -20,26 +20,26 @@ export const CommentSection = ({ papoId }: CommentSectionProps) => {
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchComments = async () => {
-      if (!papoId) return;
-      setLoading(true);
-      try {
-        const response = await fetch(`/api/papo/${papoId}/comments`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch comments');
-        }
-        const data = await response.json();
-        setComments(data);
-      } catch (error) {
-        console.error('Error fetching comments:', error);
-      } finally {
-        setLoading(false);
+  const loadComments = useCallback(async () => {
+    if (!papoId) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/papo/${papoId}/comments`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch comments');
       }
-    };
-
-    fetchComments();
+      const data = await response.json();
+      setComments(data);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [papoId]);
+
+  useEffect(() => {
+    loadComments();
+  }, [loadComments]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,9 +58,8 @@ export const CommentSection = ({ papoId }: CommentSectionProps) => {
         throw new Error('Failed to add comment');
       }
 
-      const data = await response.json();
-      setComments([...comments, ...data]);
       setNewComment('');
+      await loadComments();
     } catch (error) {
       console.error('Error adding comment:', error);
     }
