@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const statusMap: Record<string, string> = {
       'Approved': 'approved',
       'Declined': 'declined',
-      'In Review': 'in_review',
+      'In Review': 'pending',
       'Not Started': 'pending',
     };
     const verificationStatus = statusMap[event.status] || 'pending';
@@ -40,7 +40,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('verification_submissions')
       .select('*')
       .eq('user_id', userId)
-      .eq('workflow_id', event.workflow_id)
       .single();
 
     if (existingSubmission) {
@@ -60,9 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         document_url: event.document_url || null,
         status: verificationStatus,
         notes: event.notes || null,
-        created_at: new Date(),
-        workflow_id: event.workflow_id,
-        metadata: event.metadata ? JSON.stringify(event.metadata) : null,
+        created_at: new Date().toISOString(),
       });
     }
 

@@ -71,12 +71,25 @@ const NewPapoPage = () => {
         description: 'Your new Papo has been generated.',
       });
 
-      if (!user.user_metadata.username) {
-        throw new Error("Username not found. Please complete your profile.");
+      // Fetch username from profiles (not user_metadata — that's never populated for
+      // email/password signups or OAuth users, only for one legacy signup path).
+      const { data: profileRow, error: profileErr } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single();
+
+      if (profileErr || !profileRow?.username) {
+        console.warn('Papo created but profile.username missing; redirecting to dashboard.', profileErr);
+        toast({
+          title: 'Papo Created!',
+          description: 'Set a username in your profile to view it at a friendly URL.',
+        });
+        router.push('/papo');
+        return;
       }
 
-      // Redirect to the newly created Papo page to view it
-      router.push(`/papo/${user.user_metadata.username}/${data.slug}`);
+      router.push(`/papo/${profileRow.username}/${data.slug}`);
 
     } catch (error: any) {
       toast({
