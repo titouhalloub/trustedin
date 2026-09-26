@@ -40,7 +40,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('verification_submissions')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (existingSubmission) {
       await supabase
@@ -48,7 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .update({
           status: verificationStatus,
           notes: event.notes || null,
-          reviewed_at: new Date(),
+          reviewed_at: new Date().toISOString(),
         })
         .eq('id', existingSubmission.id);
     } else {
