@@ -66,7 +66,7 @@ Return only the JSON object.
         'X-Title': 'Trustedin Papo',
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.3-70b-instruct:free',
+        model: 'openrouter/free',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt },
