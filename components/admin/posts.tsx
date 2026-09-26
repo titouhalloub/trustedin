@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@supabase/auth-helpers-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useRouter } from "next/router";
 import Link from "next/link";
@@ -36,7 +36,9 @@ interface Post {
 }
 
 const PostsManagementPage = () => {
-  const { user, loading: authLoading } = useAuth();
+  const user = useUser();
+  // useUser() returns undefined while loading, null when signed out, User object when ready
+  const authLoading = user === undefined;
   const { role, loading: roleLoading } = useUserRole();
   const router = useRouter();
 
