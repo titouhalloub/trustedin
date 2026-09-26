@@ -6,7 +6,8 @@ interface Comment {
   created_at: string;
   author: {
     username: string;
-    avatar_url: string;
+    full_name?: string | null;
+    avatar_url: string | null;
   };
 }
 
@@ -75,11 +76,17 @@ export const CommentSection = ({ papoId }: CommentSectionProps) => {
       <div>
         {comments.map((comment) => (
           <div key={comment.id} className="flex items-start space-x-4 mb-4">
-            <img
-              src={comment.author.avatar_url || '/default-avatar.png'}
-              alt={comment.author.username}
-              className="w-10 h-10 rounded-full"
-            />
+            {comment.author.avatar_url ? (
+              <img
+                src={comment.author.avatar_url}
+                alt={comment.author.full_name || comment.author.username}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
+                {(comment.author.full_name?.[0] || comment.author.username?.[0] || '?').toUpperCase()}
+              </div>
+            )}
             <div>
               <p className="font-bold">{comment.author.username}</p>
               <p>{comment.content}</p>

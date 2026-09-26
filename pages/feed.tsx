@@ -232,7 +232,7 @@ export default function FeedPage({
         <Header
           profile={{
             ...profile,
-            avatar_url: profile.avatar_url || '/default-avatar.png',
+            avatar_url: profile.avatar_url || null,
             full_name: profile.full_name || 'User',
           }}
           onOpenEditProfile={() => setIsEditOpen(true)}
@@ -252,7 +252,7 @@ export default function FeedPage({
               <CreatePostCard
                 profile={{
                   ...profile,
-                  avatar_url: profile.avatar_url || '/default-avatar.png',
+                  avatar_url: profile.avatar_url || null,
                   full_name: profile.full_name || 'User',
                 }}
                 onPost={handleNewPost}
@@ -273,7 +273,7 @@ export default function FeedPage({
               <ProfileFeed
                 profile={{
                   ...profile,
-                  avatar_url: profile.avatar_url || '/default-avatar.png',
+                  avatar_url: profile.avatar_url || null,
                   full_name: profile.full_name || 'User',
                 }}
                 posts={posts}

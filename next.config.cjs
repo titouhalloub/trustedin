@@ -2,8 +2,17 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-  domains: ["images.unsplash.com", "cdn.pixabay.com", "res.cloudinary.com", "picsum.photos", "placekitten.com", "dummyimage.com"],
-},
+    remotePatterns: [
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'cdn.pixabay.com' },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'picsum.photos' },
+      { protocol: 'https', hostname: 'placekitten.com' },
+      { protocol: 'https', hostname: 'dummyimage.com' },
+      { protocol: 'https', hostname: 'api.dicebear.com' },
+      { protocol: 'https', hostname: 'qgcarphlabblhyembnbd.supabase.co' },
+    ],
+  },
 
 };
 
