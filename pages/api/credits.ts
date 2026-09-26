@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { data, error } = await supabase.rpc('handle_credit_transaction', {
         p_user_id: session.user.id,
         p_amount: -1,
-        p_reason: 'outreach_action',
+        p_reason: 'premium_feature',
       });
 
       if (error) throw error;
