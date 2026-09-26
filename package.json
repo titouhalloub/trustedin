@@ -60,7 +60,8 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "use-debounce": "^10.0.6",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "v0-sdk": "^0.16.7"
   },
   "devDependencies": {
     "@types/cookie": "^0.6.0",
