@@ -89,7 +89,18 @@ const SentRequestsList = () => {
               {requests.map((req) => (
                 <TableRow key={req.id}>
                   <TableCell className="flex items-center gap-3">
-                    <Image src={req.verifier?.avatar_url || '/default-avatar.png'} alt={req.verifier?.full_name || 'avatar'} width={40} height={40} className="rounded-full" />
+                    {req.verifier?.avatar_url ? (
+                      <Image
+                        src={req.verifier.avatar_url}
+                        width={40} height={40}
+                        className="rounded-full"
+                        alt={req.verifier.full_name || 'User'}
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
+                        {(req.verifier?.full_name?.[0] || req.verifier?.username?.[0] || '?').toUpperCase()}
+                      </div>
+                    )}
                     <div>
                       <div className="font-medium">{req.verifier?.full_name || 'N/A'}</div>
                       <div className="text-sm text-muted-foreground">@{req.verifier?.username || 'user'}</div>

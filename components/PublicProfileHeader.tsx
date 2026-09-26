@@ -46,11 +46,13 @@ export const PublicProfileHeader = ({
       <div
         className={`relative h-48 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 overflow-hidden`}
       >
-        <img
-          src={profile?.banner_url || '/default-banner.png'} // Correct path for public assets
-          alt={profile?.full_name ? `${profile.full_name}'s banner` : 'Profile banner'}
-          className="w-full h-full object-cover"
-        />
+        {profile?.banner_url && (
+          <img
+            src={profile.banner_url}
+            alt={profile.full_name ? `${profile.full_name}'s banner` : 'Profile banner'}
+            className="w-full h-full object-cover"
+          />
+        )}
       </div>
 
       {/* Profile Info */}

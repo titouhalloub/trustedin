@@ -36,11 +36,13 @@ export const Header = ({ profile, onOpenEditProfile, onEditAvatar, onEditBanner 
     <div className="bg-card border-b border-border">
       {/* Cover Photo */}
       <div className="relative h-48 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 overflow-hidden group cursor-pointer" onClick={onEditBanner}>
-        <img
-          src={profile?.banner_url || '/default-banner.png'}
-          alt={profile?.full_name ? `${profile.full_name}'s banner` : 'Profile banner'}
-          className="w-full h-full object-cover"
-        />
+        {profile?.banner_url && (
+          <img
+            src={profile.banner_url}
+            alt={profile.full_name ? `${profile.full_name}'s banner` : 'Profile banner'}
+            className="w-full h-full object-cover"
+          />
+        )}
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-semibold">
           <Camera className="h-5 w-5 mr-2" />
           Edit cover photo
