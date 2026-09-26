@@ -36,7 +36,7 @@ export const AdminAuthForm = () => {
         .eq('id', signInData.user.id)
         .single();
 
-      const isAdmin = profile?.role === 'admin' || email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
+      const isAdmin = profile?.role === 'admin';
 
       if (profileError || !isAdmin) {
         setError('You do not have permission to access the admin dashboard.');

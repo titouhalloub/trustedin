@@ -175,13 +175,11 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     return { redirect: { destination: '/auth', permanent: false } };
   }
 
-  // Check if user is admin or the hardcoded super admin
   const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-  const isSuperAdmin = session.user.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
   const isAdmin = profile?.role === 'admin';
 
-  // If there's a profile error and the user is not the super admin, deny access.
-  if (profileError && !isSuperAdmin) {
+  // Deny access unless the user has role='admin' on their profile
+  if (profileError || !isAdmin) {
     return { notFound: true };
   }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useUser, useSupabaseClient } from '@supabase/auth-helpers-react';
+import { useUserRole } from '@/hooks/useUserRole';
 
 // ✅ Define the status type
 export type SubscriptionStatus = 'active' | 'inactive' | 'canceled' | 'past_due';
@@ -15,6 +16,7 @@ interface Subscription {
 // ✅ Main hook
 export function useSubscriptionStatus(userId?: string) {
   const user = useUser();
+  const { role } = useUserRole();
   const supabase = useSupabaseClient();
   const [status, setStatus] = useState<SubscriptionStatus>('inactive');
   const [loading, setLoading] = useState(true);
@@ -52,8 +54,8 @@ export function useSubscriptionStatus(userId?: string) {
     fetchSubscription();
   }, [userId, user?.id, supabase]);
 
-  // For the specific user, always return active
-  if (user?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL) {
+  // Admins get full access to all subscription-gated features
+  if (role === 'admin') {
     return { isActive: true, loading: false };
   }
 

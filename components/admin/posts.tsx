@@ -47,8 +47,7 @@ const PostsManagementPage = () => {
   // Security check: Redirect if not an admin
   useEffect(() => {
     if (!authLoading && !roleLoading) {
-      const isSuperAdmin = user?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
-      if (!user || (role !== "admin" && !isSuperAdmin)) {
+      if (!user || role !== "admin") {
         router.replace("/auth");
       }
     }
@@ -71,8 +70,7 @@ const PostsManagementPage = () => {
   }, []);
 
   useEffect(() => {
-    const isSuperAdmin = user?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
-    if (user && (role === "admin" || isSuperAdmin)) {
+    if (user && role === "admin") {
       fetchPosts();
     }
   }, [user, role, fetchPosts]);

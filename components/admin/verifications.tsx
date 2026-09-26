@@ -45,29 +45,12 @@ const VerificationsManagementPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  // ADMIN CHECK (uses SUPER_ADMIN_EMAIL env var)
-// ---------- ADMIN CHECK (BYPASS WITH NO REDIRECTS) ----------
+  // ---------- ADMIN CHECK ----------
 useEffect(() => {
   const checkAdmin = async () => {
-    if (user === undefined) return; // still loading
+    if (user === undefined) return;
     if (user === null) {
       console.warn("User not logged in — but bypassing.");
-      return;
-    }
-
-    const SUPER_ADMIN_EMAIL = process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL || "";
-    let userEmail: string | null = (user as any)?.email ?? null;
-
-    if (!userEmail) {
-      const { data } = await supabase.auth.getSession();
-      userEmail = data?.session?.user?.email ?? null;
-    }
-
-    const isSuperAdmin =
-      userEmail?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
-
-    if (isSuperAdmin) {
-      console.log("✅ Super admin detected — bypass granted");
       return;
     }
 
@@ -87,7 +70,6 @@ useEffect(() => {
 
   checkAdmin();
 }, [user, supabase]);
-// ----------------------------------------------------------------
 
   // --------------------------------------------------------------------------------------------
 

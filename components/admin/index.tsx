@@ -63,10 +63,9 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     .eq('id', session.user.id)
     .single();
 
-  const isSuperAdmin = session.user.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL;
   const isAdmin = profile?.role === 'admin';
 
-  if (!isAdmin && !isSuperAdmin) {
+  if (!isAdmin) {
     return { notFound: true };
   }
 
