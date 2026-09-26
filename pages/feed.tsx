@@ -11,12 +11,12 @@ import { CreatePostCard } from '@/components/CreatePostCard';
 import { EditProfileDialog } from '@/components/EditProfileDialog';
 import { Card, CardContent } from "@/components/ui/card";
 import { ProfileFeed } from '@/components/ProfileFeed';
-import { PapoFeed } from '@/components/PapoFeed';
+import { PapoCard } from '@/components/papo/PapoCard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Search, Home, Users, Mail, Shield, Briefcase, LayoutGrid } from 'lucide-react';
 import { NotificationBell } from '@/components/NotificationBell'; // Keep this import
-import { Profile, Post } from '@/lib/types';
+import { Profile, Post, Papo } from '@/lib/types';
 import { transformRawPost } from '@/lib/utils';
 import withSubscription from '@/components/withSubscription';
 
@@ -25,6 +25,7 @@ interface FeedPageProps {
   profile: Profile;
   posts: Post[];
   suggestions: Profile[];
+  latestPapos: Papo[];
 }
 
 export default function FeedPage({
@@ -32,6 +33,7 @@ export default function FeedPage({
   profile: initialProfile,
   posts: initialPosts,
   suggestions,
+  latestPapos,
 }: FeedPageProps) {
   const router = useRouter();
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -255,7 +257,19 @@ export default function FeedPage({
                 }}
                 onPost={handleNewPost}
               />
-              <PapoFeed />
+              {latestPapos && latestPapos.length > 0 && (
+                <section className="mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold">Latest Papos</h2>
+                    <Link href="/papo" className="text-sm text-primary hover:underline">View all</Link>
+                  </div>
+                  <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
+                    {latestPapos.slice(0, 10).map((p) => (
+                      <PapoCard key={p.id} papo={p} variant="compact" />
+                    ))}
+                  </div>
+                </section>
+              )}
               <ProfileFeed
                 profile={{
                   ...profile,
@@ -359,6 +373,20 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     console.error('[DEBUG] Supabase error fetching posts:', postsError);
   }
 
+  const { data: latestPapos } = await supabase
+    .from('papo')
+    .select(`
+      id, user_id, slug, title, prompt_used,
+      ai_generated_content, edited_content, thumbnail_url,
+      preview_image_url, engagement_metrics, likes,
+      metadata, engine, external_url, external_project_id,
+      visibility, last_synced_at, created_at,
+      author:profiles!papo_user_id_fkey(id, username, full_name, avatar_url)
+    `)
+    .eq('visibility', 'public')
+    .order('created_at', { ascending: false })
+    .limit(10);
+
   const posts: Post[] =
     rawPosts?.map((p) => transformRawPost(p, session.user.id)) || [];
 
@@ -368,6 +396,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
       profile,
       posts,
       suggestions: suggestions || [],
+      latestPapos: (latestPapos || []) as unknown as Papo[],
       initialSession: session,
     },
   };

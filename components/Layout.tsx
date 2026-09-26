@@ -72,7 +72,7 @@ export const Layout = ({ children }: LayoutProps) => {
       <Link href="/feed" className="transition-colors hover:text-foreground/80 text-foreground/60" onClick={() => setIsMenuOpen(false)}>Home</Link>
       <Link href="/network" className="transition-colors hover:text-foreground/80 text-foreground/60" onClick={() => setIsMenuOpen(false)}>Network</Link>
       <Link href="/messages" className="transition-colors hover:text-foreground/80 text-foreground/60" onClick={() => setIsMenuOpen(false)}>Messages</Link>
-      <Link href="/papo/dashboard" className="transition-colors hover:text-foreground/80 text-foreground/60" onClick={() => setIsMenuOpen(false)}>Papo</Link>
+      <Link href="/papo" className="transition-colors hover:text-foreground/80 text-foreground/60" onClick={() => setIsMenuOpen(false)}>Papo</Link>
       <Link href="/profile/referrals" className="transition-colors hover:text-foreground/80 text-foreground" onClick={() => setIsMenuOpen(false)}>Referrals</Link>
     </>
   );
@@ -149,3 +149,5 @@ export const Layout = ({ children }: LayoutProps) => {
     </div>
   );
 };
+
+export default Layout;

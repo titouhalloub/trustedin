@@ -138,3 +138,41 @@ export interface JobWithProfile extends Job {
   profiles: { full_name: string | null };
   job_applications: { candidate_id: string }[];
 }
+
+export type PapoEngine = 'legacy' | 'heyputer' | 'v0';
+export type PapoVisibility = 'public' | 'unlisted' | 'private';
+
+export type PapoMetadata = {
+  headline?: string;
+  description?: string;
+  tags?: string[];
+  category?: string;
+};
+
+export type Papo = {
+  id: string;
+  user_id: string;
+  slug: string | null;
+  title: string | null;
+  prompt_used: string | null;
+  ai_generated_content: any;
+  edited_content: any;
+  thumbnail_url: string | null;
+  preview_image_url: string | null;
+  engagement_metrics: { likes?: number; comments?: number; views?: number } | null;
+  likes: number;
+  metadata: PapoMetadata | null;
+  engine: PapoEngine;
+  external_url: string | null;
+  external_project_id: string | null;
+  visibility: PapoVisibility;
+  last_synced_at: string | null;
+  created_at: string;
+  author?: {
+    id: string;
+    username: string;
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
+};
+
