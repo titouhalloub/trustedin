@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Link from 'next/link';
 import { Heart, MessageCircle, Eye, Share2 } from 'lucide-react';
 import type { Papo } from '@/lib/types';
@@ -9,6 +10,8 @@ type Props = { papo: Papo; variant?: 'default' | 'compact' };
 
 export function PapoCard({ papo, variant = 'default' }: Props) {
   const preview = papo.preview_image_url || papo.thumbnail_url;
+  const [imgFailed, setImgFailed] = useState(false);
+  const showPreview = preview && !imgFailed;
   const headline = papo.metadata?.headline || papo.title || 'Untitled Papo';
   const description = papo.metadata?.description || '';
   const tags = papo.metadata?.tags || [];
@@ -23,8 +26,8 @@ export function PapoCard({ papo, variant = 'default' }: Props) {
       <Link href={href} className="block w-64 flex-shrink-0 group">
         <div className="rounded-xl overflow-hidden border bg-card hover:shadow-md transition-shadow">
           <div className="aspect-[4/3] bg-muted relative">
-            {preview ? (
-              <img src={preview} alt={headline} className="w-full h-full object-cover" />
+            {showPreview ? (
+              <img src={preview} alt={headline} className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground text-sm">No preview</div>
             )}
@@ -57,8 +60,8 @@ export function PapoCard({ papo, variant = 'default' }: Props) {
       </div>
       <Link href={href} className="block">
         <div className="aspect-[16/9] bg-muted relative">
-          {preview ? (
-            <img src={preview} alt={headline} className="w-full h-full object-cover" />
+          {showPreview ? (
+            <img src={preview} alt={headline} className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground">No preview available</div>
           )}
