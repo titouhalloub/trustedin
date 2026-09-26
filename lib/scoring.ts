@@ -44,7 +44,7 @@ async function calculateIdentityScore(profile: any): Promise<number> {
 async function calculateNetworkScore(userId: string, supabase: SupabaseClient): Promise<number> {
   // V1: Simple count of followers and endorsements given/received.
   const { count: followersCount } = await supabase
-    .from('connections')
+    .from('follows')
     .select('*', { count: 'exact', head: true })
     .eq('following_id', userId);
 

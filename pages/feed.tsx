@@ -312,7 +312,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
   // Fetch suggestions (users the current user is not following, and is not the user themselves)
   const { data: followedUsers } = await supabase
-    .from('connections')
+    .from('follows')
     .select('following_id')
     .eq('follower_id', session.user.id);
 

@@ -29,7 +29,7 @@ export default async function handler(
 
   if (req.method === 'POST') {
     // Follow a user
-    const { error } = await supabase.from('connections').insert({
+    const { error } = await supabase.from('follows').insert({
       follower_id: currentUserId,
       following_id: targetUserId,
     });
@@ -42,7 +42,7 @@ export default async function handler(
     return res.status(200).json({ message: 'Successfully followed user.' });
   } else if (req.method === 'DELETE') {
     // Unfollow a user
-    const { error } = await supabase.from('connections').delete().eq('follower_id', currentUserId).eq('following_id', targetUserId);
+    const { error } = await supabase.from('follows').delete().eq('follower_id', currentUserId).eq('following_id', targetUserId);
 
     if (error) {
       console.error('Error unfollowing user:', error);

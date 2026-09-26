@@ -253,7 +253,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const likesCount = rawPosts?.reduce((acc, p) => acc + (p.likes?.[0]?.count || 0), 0) || 0;
   const mediaCount = rawPosts?.filter(p => p.media_urls?.length).length || 0;
 
-  const { data: followedUsers } = await supabase.from('connections').select('following_id').eq('follower_id', session.user.id);
+  const { data: followedUsers } = await supabase.from('follows').select('following_id').eq('follower_id', session.user.id);
   const followedUserIds = followedUsers?.map(f => f.following_id) || [];
   const excludedIds = [session.user.id, ...followedUserIds];
 
