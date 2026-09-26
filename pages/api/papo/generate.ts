@@ -62,9 +62,11 @@ Return only the JSON object.
       headers: {
         'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'https://trustedin.vercel.app',
+        'X-Title': 'Trustedin Papo',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-3.5-turbo',
+        model: 'meta-llama/llama-3.3-70b-instruct:free',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt },
@@ -73,7 +75,9 @@ Return only the JSON object.
     });
 
     if (!response.ok) {
-      throw new Error(`OpenRouter API request failed with status ${response.status}`);
+      const errorBody = await response.text();
+      console.error(`OpenRouter error ${response.status}:`, errorBody);
+      throw new Error(`OpenRouter API request failed with status ${response.status}: ${errorBody}`);
     }
 
     const data = await response.json();
@@ -88,6 +92,6 @@ Return only the JSON object.
     res.status(200).json(generatedContent);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Failed to generate content from AI' });
+    res.status(500).json({ error: 'Failed to generate content from AI', detail: error instanceof Error ? error.message : String(error) });
   }
 }
