@@ -9,12 +9,13 @@ import { Badge } from '@/components/ui/badge';
 type Props = { papo: Papo; variant?: 'default' | 'compact' };
 
 export function PapoCard({ papo, variant = 'default' }: Props) {
-  const proxyPreview = papo.engine === 'v0' && papo.external_project_id
+  const preview = papo.preview_image_url || papo.thumbnail_url;
+  const proxyPreview = !preview && papo.engine === 'v0' && papo.external_project_id
     ? `/api/papo/screenshot/${papo.external_project_id}`
     : null;
-  const preview = proxyPreview || papo.preview_image_url || papo.thumbnail_url;
+  const finalPreview = preview || proxyPreview;
   const [imgFailed, setImgFailed] = useState(false);
-  const showPreview = preview && !imgFailed;
+  const showPreview = finalPreview && !imgFailed;
   const headline = papo.metadata?.headline || papo.title || 'Untitled Papo';
   const description = papo.metadata?.description || '';
   const tags = papo.metadata?.tags || [];
@@ -30,7 +31,7 @@ export function PapoCard({ papo, variant = 'default' }: Props) {
         <div className="rounded-xl overflow-hidden border bg-card hover:shadow-md transition-shadow">
           <div className="aspect-[4/3] bg-muted relative">
             {showPreview ? (
-              <img src={preview} alt={headline} className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
+              <img src={finalPreview} alt={headline} className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground text-sm">No preview</div>
             )}
@@ -64,7 +65,7 @@ export function PapoCard({ papo, variant = 'default' }: Props) {
       <Link href={href} className="block">
         <div className="aspect-[16/9] bg-muted relative">
           {showPreview ? (
-            <img src={preview} alt={headline} className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
+            <img src={finalPreview} alt={headline} className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground">No preview available</div>
           )}

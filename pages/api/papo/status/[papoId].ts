@@ -2,6 +2,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 import { v0 } from 'v0-sdk';
+import { cacheScreenshot } from '@/lib/screenshotCache';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -65,12 +66,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const screenshotUrl: string | undefined = latestVersion?.screenshotUrl;
 
     if (versionStatus === 'completed' && demoUrl) {
-      // Persist the resolved URLs so subsequent loads are fast
+      let permanentScreenshotUrl: string | null = null;
+
+      // Download the screenshot bytes from v0 (auth required), then cache in Supabase Storage
+      if (screenshotUrl) {
+        try {
+          const imgRes = await fetch(screenshotUrl, {
+            headers: { Authorization: `Bearer ${process.env.V0_API_KEY}` },
+          });
+          if (imgRes.ok) {
+            const contentType = imgRes.headers.get('content-type') || 'image/png';
+            const buffer = Buffer.from(await imgRes.arrayBuffer());
+            permanentScreenshotUrl = await cacheScreenshot(papo.id, buffer, contentType);
+          } else {
+            console.error('Screenshot fetch failed with status:', imgRes.status);
+          }
+        } catch (cacheErr) {
+          console.error('Screenshot caching failed; falling back to raw URL:', cacheErr);
+        }
+      }
+
       await supabase
         .from('papo')
         .update({
           external_url: demoUrl,
-          preview_image_url: screenshotUrl || null,
+          preview_image_url: permanentScreenshotUrl || screenshotUrl || null,
           last_synced_at: new Date().toISOString(),
         })
         .eq('id', papo.id);
