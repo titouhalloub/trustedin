@@ -126,15 +126,43 @@ const NewPapoPage = () => {
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Failed to generate Papo');
+          throw new Error(errorData.error || 'Failed to create Papo');
         }
 
-        const data = await response.json();
+        const { papoId, redirectTo } = await response.json();
+
+        // Poll status until ready, failed, or 90 seconds elapse
+        const startedAt = Date.now();
+        const TIMEOUT_MS = 90_000;
+        const POLL_MS = 2000;
+        let finalRedirect = redirectTo;
+        let failed = false;
+
+        while (Date.now() - startedAt < TIMEOUT_MS) {
+          await new Promise((r) => setTimeout(r, POLL_MS));
+          const statusRes = await fetch(`/api/papo/status/${papoId}`);
+          if (!statusRes.ok) continue;
+          const statusData = await statusRes.json();
+          if (statusData.status === 'ready') {
+            finalRedirect = statusData.redirectTo || redirectTo;
+            break;
+          }
+          if (statusData.status === 'failed') {
+            failed = true;
+            throw new Error(statusData.message || 'v0 build failed');
+          }
+          // else pending — keep polling
+        }
+
+        if (failed) return;
+
+        // If we timed out but Papo exists, still redirect (the detail page will render
+        // the pending state — user can refresh later).
         toast({
           title: 'Live App Papo Created!',
           description: 'Your AI app is ready to view.',
         });
-        router.push(data.redirectTo);
+        router.push(finalRedirect);
         return;
       }
 
