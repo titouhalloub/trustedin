@@ -9,7 +9,10 @@ import { Badge } from '@/components/ui/badge';
 type Props = { papo: Papo; variant?: 'default' | 'compact' };
 
 export function PapoCard({ papo, variant = 'default' }: Props) {
-  const preview = papo.preview_image_url || papo.thumbnail_url;
+  const proxyPreview = papo.engine === 'v0' && papo.external_project_id
+    ? `/api/papo/screenshot/${papo.external_project_id}`
+    : null;
+  const preview = proxyPreview || papo.preview_image_url || papo.thumbnail_url;
   const [imgFailed, setImgFailed] = useState(false);
   const showPreview = preview && !imgFailed;
   const headline = papo.metadata?.headline || papo.title || 'Untitled Papo';
