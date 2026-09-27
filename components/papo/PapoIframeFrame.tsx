@@ -7,6 +7,9 @@ type Props = { src: string; title?: string };
 export function PapoIframeFrame({ src, title = 'Papo' }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 20; // ~5 minutes at 15s intervals
+  const [cacheBust, setCacheBust] = useState(0);
 
   const isSafe = /^https?:\/\//i.test(src);
   if (!isSafe) {
@@ -44,19 +47,37 @@ export function PapoIframeFrame({ src, title = 'Papo' }: Props) {
         <div className="absolute inset-0 flex items-center justify-center bg-muted/20 z-10 pointer-events-none">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            Loading Papo…
+            {retryCount > 0 ? 'Deploying your app… (this can take up to 5 minutes)' : 'Loading Papo…'}
           </div>
         </div>
       )}
       <iframe
-        src={src}
+        src={`${src}${src.includes('?') ? '&' : '?'}_r=${cacheBust}`}
         title={title}
         className="w-full h-[70vh] min-h-[500px] border-0 block"
         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
         referrerPolicy="no-referrer"
         loading="lazy"
-        onLoad={() => setLoading(false)}
-        onError={() => { setLoading(false); setError(true); }}
+        onLoad={() => {
+          // If we're still in the early retry window, hold the loading state a bit longer
+          if (retryCount > 0 && retryCount < 3) {
+            setTimeout(() => setLoading(false), 5000);
+          } else {
+            setLoading(false);
+          }
+        }}
+        onError={() => {
+          setLoading(false);
+          if (retryCount < MAX_RETRIES) {
+            setTimeout(() => {
+              setRetryCount((c) => c + 1);
+              setCacheBust((b) => b + 1);
+              setLoading(true);
+            }, 15000);
+          } else {
+            setError(true);
+          }
+        }}
       />
     </div>
   );

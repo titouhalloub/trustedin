@@ -66,6 +66,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const screenshotUrl: string | undefined = latestVersion?.screenshotUrl;
 
     if (versionStatus === 'completed' && demoUrl) {
+      let permanentAppUrl: string | null = null;
+
+      if (latestVersion?.id) {
+        try {
+          // Idempotency: check if a deployment already exists for this version
+          const existing = await v0.deployments.find({
+            chatId: papo.external_project_id!,
+            versionId: latestVersion.id,
+          });
+
+          const existingDeployment = Array.isArray(existing?.data) ? existing.data[0] : null;
+
+          if (existingDeployment?.webUrl) {
+            permanentAppUrl = existingDeployment.webUrl;
+          } else {
+            const deployment = await v0.deployments.create({
+              chatId: papo.external_project_id!,
+              versionId: latestVersion.id,
+            });
+            if (deployment && typeof deployment === 'object' && 'webUrl' in deployment) {
+              permanentAppUrl = (deployment as any).webUrl || null;
+            }
+          }
+        } catch (deployErr) {
+          console.error('v0 deployment failed; falling back to demoUrl:', deployErr);
+        }
+      }
+
       let permanentScreenshotUrl: string | null = null;
 
       // Download the screenshot bytes from v0 (auth required), then cache in Supabase Storage
@@ -89,7 +117,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await supabase
         .from('papo')
         .update({
-          external_url: demoUrl,
+          external_url: permanentAppUrl || demoUrl,
           preview_image_url: permanentScreenshotUrl || screenshotUrl || null,
           last_synced_at: new Date().toISOString(),
         })
