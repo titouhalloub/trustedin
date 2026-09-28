@@ -12,9 +12,11 @@ import type { Papo } from '@/lib/types';
 
 interface PapoPageProps {
   papo: Papo;
+  liked: boolean;
+  currentUserId: string | null;
 }
 
-const PapoPage: NextPage<PapoPageProps> = ({ papo }) => {
+const PapoPage: NextPage<PapoPageProps> = ({ papo, liked, currentUserId }) => {
   const isHybrid = Boolean(papo.external_url);
 
   return (
@@ -25,7 +27,7 @@ const PapoPage: NextPage<PapoPageProps> = ({ papo }) => {
             <>
               <PapoDetailHeader papo={papo} />
               <PapoIframeFrame src={papo.external_url!} title={papo.title || 'Papo'} />
-              <PapoEngagementBar papo={papo} />
+              <PapoEngagementBar papo={papo} liked={liked} currentUserId={currentUserId} />
               <section className="mt-8">
                 <CommentSection papoId={papo.id} />
               </section>
@@ -120,9 +122,33 @@ export const getServerSideProps: GetServerSideProps<PapoPageProps, PapoPageParam
     return { notFound: true };
   }
 
+  // Get current user (may be null if unauthenticated)
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Check if the current user has liked this papo
+  let liked = false;
+  if (user && papo.id) {
+    const { data: likeRow } = await supabase
+      .from('papo_likes')
+      .select('id')
+      .eq('papo_id', papo.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+    liked = !!likeRow;
+  }
+
+  // Increment view count (fire-and-forget style but awaited for correctness)
+  try {
+    await supabase.rpc('increment_papo_views', { papo_id: papo.id });
+  } catch (viewErr) {
+    console.error('View increment failed:', viewErr);
+  }
+
   return {
     props: {
       papo: papo as unknown as Papo,
+      liked,
+      currentUserId: user?.id ?? null,
     },
   };
 };
