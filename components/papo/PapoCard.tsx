@@ -2,24 +2,60 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Heart, MessageCircle, Eye, Share2 } from 'lucide-react';
 import type { Papo } from '@/lib/types';
-import { getInitials } from '@/lib/utils';
+import { getInitials, cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 
-type Props = { papo: Papo; variant?: 'default' | 'compact' };
+type Props = {
+  papo: Papo;
+  variant?: 'default' | 'compact';
+  liked?: boolean;
+  currentUserId?: string | null;
+};
 
-export function PapoCard({ papo, variant = 'default' }: Props) {
+export function PapoCard({ papo, variant = 'default', liked: initialLiked = false, currentUserId = null }: Props) {
   const preview = papo.preview_image_url || papo.thumbnail_url;
   const proxyPreview = !preview && papo.engine === 'v0' && papo.external_project_id
     ? `/api/papo/screenshot/${papo.external_project_id}`
     : null;
   const finalPreview = preview || proxyPreview;
   const [imgFailed, setImgFailed] = useState(false);
+  const [liked, setLiked] = useState(initialLiked);
+  const [likeCount, setLikeCount] = useState(papo.likes ?? 0);
+  const [likePending, setLikePending] = useState(false);
   const showPreview = finalPreview && !imgFailed;
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.preventDefault(); // prevent Link navigation if button is inside a Link
+    e.stopPropagation();
+    if (!currentUserId) return;
+    if (likePending) return;
+
+    setLikePending(true);
+    const prevLiked = liked;
+    const prevCount = likeCount;
+
+    // Optimistic
+    setLiked(!liked);
+    setLikeCount(liked ? Math.max(0, likeCount - 1) : likeCount + 1);
+
+    try {
+      const res = await fetch(`/api/papo/${papo.id}/like`, { method: 'POST' });
+      if (!res.ok) throw new Error('Like failed');
+      const data = await res.json();
+      setLiked(data.liked);
+      setLikeCount(data.likes ?? 0);
+    } catch (err) {
+      setLiked(prevLiked);
+      setLikeCount(prevCount);
+      console.error(err);
+    } finally {
+      setLikePending(false);
+    }
+  };
   const headline = papo.metadata?.headline || papo.title || 'Untitled Papo';
   const description = papo.metadata?.description || '';
   const tags = papo.metadata?.tags || [];
-  const likes = papo.likes ?? 0;
   const comments = papo.engagement_metrics?.comments ?? 0;
   const views = papo.engagement_metrics?.views ?? 0;
   const authorUsername = papo.author?.username || 'unknown';
@@ -86,7 +122,19 @@ export function PapoCard({ papo, variant = 'default' }: Props) {
           </div>
         )}
         <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1"><Heart className="h-4 w-4" /> {likes}</span>
+          <button
+            type="button"
+            onClick={handleLike}
+            disabled={likePending || !currentUserId}
+            className={cn(
+              'flex items-center gap-1 transition-colors hover:text-red-500 disabled:cursor-default disabled:hover:text-muted-foreground',
+              liked && 'text-red-500'
+            )}
+            aria-label={liked ? 'Unlike' : 'Like'}
+          >
+            <Heart className={cn('h-4 w-4', liked && 'fill-current')} />
+            {likeCount}
+          </button>
           <Link href={href} className="flex items-center gap-1 hover:text-primary">
             <MessageCircle className="h-4 w-4" /> {comments}
           </Link>

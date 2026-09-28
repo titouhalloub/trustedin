@@ -26,6 +26,8 @@ interface FeedPageProps {
   posts: Post[];
   suggestions: Profile[];
   latestPapos: Papo[];
+  likedPapos: string[];
+  currentUserId: string | null;
 }
 
 export default function FeedPage({
@@ -34,6 +36,8 @@ export default function FeedPage({
   posts: initialPosts,
   suggestions,
   latestPapos,
+  likedPapos,
+  currentUserId,
 }: FeedPageProps) {
   const router = useRouter();
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -265,7 +269,13 @@ export default function FeedPage({
                   </div>
                   <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
                     {latestPapos.slice(0, 10).map((p) => (
-                      <PapoCard key={p.id} papo={p} variant="compact" />
+                      <PapoCard
+                        key={p.id}
+                        papo={p}
+                        variant="compact"
+                        liked={likedPapos.includes(p.id)}
+                        currentUserId={currentUserId}
+                      />
                     ))}
                   </div>
                 </section>
@@ -387,6 +397,17 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     .order('created_at', { ascending: false })
     .limit(10);
 
+  // Batch-fetch which papos the current user has liked
+  let likedPapos: string[] = [];
+  if (latestPapos && latestPapos.length > 0) {
+    const { data: likeRows } = await supabase
+      .from('papo_likes')
+      .select('papo_id')
+      .eq('user_id', session.user.id)
+      .in('papo_id', latestPapos.map((p: any) => p.id));
+    likedPapos = (likeRows || []).map((r: any) => r.papo_id);
+  }
+
   const posts: Post[] =
     rawPosts?.map((p) => transformRawPost(p, session.user.id)) || [];
 
@@ -397,6 +418,8 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
       posts,
       suggestions: suggestions || [],
       latestPapos: (latestPapos || []) as unknown as Papo[],
+      likedPapos,
+      currentUserId: session.user.id,
       initialSession: session,
     },
   };

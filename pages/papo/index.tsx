@@ -7,9 +7,13 @@ import { PapoCard } from '@/components/papo/PapoCard';
 import { Button } from '@/components/ui/button';
 import type { Papo } from '@/lib/types';
 
-type Props = { papos: Papo[] };
+type Props = {
+  papos: Papo[];
+  likedIds: string[];
+  currentUserId: string | null;
+};
 
-export default function PapoFeedPage({ papos }: Props) {
+export default function PapoFeedPage({ papos, likedIds, currentUserId }: Props) {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto px-4 py-6">
@@ -31,7 +35,14 @@ export default function PapoFeedPage({ papos }: Props) {
           </div>
         ) : (
           <div className="space-y-6">
-            {papos.map((p) => <PapoCard key={p.id} papo={p} />)}
+            {papos.map((p) => (
+              <PapoCard
+                key={p.id}
+                papo={p}
+                liked={likedIds.includes(p.id)}
+                currentUserId={currentUserId}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -55,5 +66,24 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     .order('created_at', { ascending: false })
     .limit(50);
   if (error) console.error('Error loading papo feed:', error);
-  return { props: { papos: (papos || []) as unknown as Papo[] } };
+
+  // Batch-fetch which papos the current user has liked
+  const { data: { user } } = await supabase.auth.getUser();
+  let likedIds: string[] = [];
+  if (user && papos && papos.length > 0) {
+    const { data: likeRows } = await supabase
+      .from('papo_likes')
+      .select('papo_id')
+      .eq('user_id', user.id)
+      .in('papo_id', papos.map((p: any) => p.id));
+    likedIds = (likeRows || []).map((r: any) => r.papo_id);
+  }
+
+  return {
+    props: {
+      papos: (papos || []) as unknown as Papo[],
+      likedIds,
+      currentUserId: user?.id ?? null,
+    },
+  };
 };
