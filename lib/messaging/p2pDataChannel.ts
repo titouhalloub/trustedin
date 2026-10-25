@@ -145,6 +145,15 @@ export class P2PDataChannel {
       return;
     }
 
+    // Reject duplicate/replayed descriptions and offer glare rather than
+    // allowing arbitrary signaling to drive implicit renegotiation.
+    if (signal.description.type === 'offer' && this.peer.signalingState !== 'stable') {
+      throw new Error('Unexpected WebRTC offer for the current signaling state.');
+    }
+    if (signal.description.type === 'answer' && this.peer.signalingState !== 'have-local-offer') {
+      throw new Error('Unexpected WebRTC answer; no local offer is awaiting it.');
+    }
+
     await this.peer.setRemoteDescription(signal.description);
     await this.flushCandidates();
 
