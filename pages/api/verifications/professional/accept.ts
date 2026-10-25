@@ -13,9 +13,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const token = typeof (req.method === 'GET' ? req.query.token : req.body?.token) === 'string'
-    ? (req.method === 'GET' ? req.query.token : req.body.token).trim()
-    : '';
+  const rawToken = req.method === 'GET' ? req.query.token : req.body?.token;
+  const token = typeof rawToken === 'string' ? rawToken.trim() : '';
 
   if (!token || token.length > 256) {
     return res.status(400).json({ error: 'A valid invitation token is required.' });
