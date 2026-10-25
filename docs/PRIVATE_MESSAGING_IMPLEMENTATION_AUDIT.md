@@ -56,3 +56,16 @@ The messaging-specific plan must not silently migrate or delete credential-verif
 ## Phase 1 implementation boundary
 
 The first code increment should establish isolated, testable foundations (IndexedDB persistence for opaque encrypted envelopes and WebRTC DataChannel transport with no TURN servers configured). It must not claim to complete E2EE or silently switch the production chat UI away from the existing server-persisted behavior before the encryption and authorization layers are ready.
+
+
+## Current implementation branch progress
+
+The branch `feat/p2p-first-messaging-foundation` contains the first isolated foundations:
+
+- `lib/messaging/localEncryptedEnvelopeStore.ts`: IndexedDB persistence for opaque ciphertext envelopes, with validation and conversation/time indexes. It deliberately does not encrypt; only a future reviewed E2EE layer should supply ciphertext.
+- `lib/messaging/p2pDataChannel.ts`: WebRTC DataChannel transport for binary encrypted payloads, accepts STUN-only ICE configuration, rejects TURN URLs, and reports direct-connection failure instead of silently relaying.
+- This audit document records the existing server-persisted message and Supabase Storage behavior that still needs migration.
+
+**Not yet implemented:** production E2EE, peer/device authentication, authorized signaling adapter, chunked/resumable attachments, UI integration, optional cloud provider integration, multi-device key management/history sync, or migration of current plaintext messages and media. The existing chat UI intentionally remains unchanged in this first increment.
+
+**Verification status:** source changes were committed to the feature branch, but a local checkout/build/test run could not be performed in this environment because GitHub network access was unavailable. Treat the code as unverified until CI or a local checkout passes type-check, lint, and tests. No production behavior is claimed to have changed.
