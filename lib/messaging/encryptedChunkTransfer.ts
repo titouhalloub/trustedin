@@ -100,8 +100,12 @@ export function encodeTransferChunkFrame(
     metadata.index >= metadata.totalChunks ||
     metadata.totalBytes < 1 ||
     metadata.totalBytes > MAX_TRANSFER_BYTES ||
+    metadata.totalChunks !== Math.ceil(metadata.totalBytes / DEFAULT_TRANSFER_CHUNK_BYTES) ||
     bytes.byteLength < 1 ||
     bytes.byteLength > DEFAULT_TRANSFER_CHUNK_BYTES ||
+    bytes.byteLength !== (metadata.index === metadata.totalChunks - 1
+      ? metadata.totalBytes - metadata.index * DEFAULT_TRANSFER_CHUNK_BYTES
+      : DEFAULT_TRANSFER_CHUNK_BYTES) ||
     metadata.digest.byteLength !== 32
   ) {
     throw new Error('Invalid encrypted-transfer chunk metadata.');
