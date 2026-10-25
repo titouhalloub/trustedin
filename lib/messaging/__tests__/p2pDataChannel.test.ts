@@ -179,3 +179,28 @@ describe('P2PDataChannel outbound payload safety', () => {
     transport.close();
   });
 });
+
+
+  it('rejects empty payloads and a saturated send buffer', async () => {
+    const transport = await openTestChannel();
+
+    expect(() => transport.sendEncryptedPayload(new ArrayBuffer(0))).toThrow(/empty encrypted payload/i);
+    channel.bufferedAmount = 1024 * 1024;
+    expect(() => transport.sendEncryptedPayload(new Uint8Array([1]))).toThrow(/buffer is full/i);
+    expect(channel.send).not.toHaveBeenCalled();
+    transport.close();
+  });
+
+  it('copies an ArrayBuffer before passing it to the browser', async () => {
+    const transport = await openTestChannel();
+    const original = new Uint8Array([4, 5, 6]).buffer;
+
+    transport.sendEncryptedPayload(original);
+    new Uint8Array(original)[0] = 99;
+
+    expect(channel.send).toHaveBeenCalledTimes(1);
+    const sent = channel.send.mock.calls[0][0] as Uint8Array;
+    expect(Array.from(sent)).toEqual([4, 5, 6]);
+    expect(sent.buffer).not.toBe(original);
+    transport.close();
+  });
