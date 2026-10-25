@@ -7,6 +7,8 @@
  * be supplied and reviewed before connecting this transport to production chat.
  */
 
+const MAX_ENCRYPTED_PAYLOAD_BYTES = 16 * 1024;
+
 export type P2PSignal =
   | { kind: 'description'; description: RTCSessionDescriptionInit }
   | { kind: 'candidate'; candidate: RTCIceCandidateInit };
@@ -118,6 +120,9 @@ export class P2PDataChannel {
     }
     if (ciphertext.byteLength === 0) {
       throw new Error('Cannot send an empty encrypted payload.');
+    }
+    if (ciphertext.byteLength > MAX_ENCRYPTED_PAYLOAD_BYTES) {
+      throw new Error('Encrypted payload exceeds 16 KiB. Chunked attachment transfer is not implemented yet.');
     }
     this.channel.send(ciphertext);
   }
