@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useUser } from '@supabase/auth-helpers-react';
+import { useSessionContext, useUser } from '@supabase/auth-helpers-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { ShieldCheck, Github, BriefcaseBusiness, GraduationCap, BadgeCheck, Clock3, FileText } from 'lucide-react';
@@ -60,16 +60,35 @@ function dateLabel(value?: string | null) {
 
 export default function TrustReport() {
   const user = useUser();
+  const { isLoading: sessionLoading } = useSessionContext();
   const [data, setData] = useState<DossierData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    if (!user) {
-      setLoading(false);
-      return;
+
+    // Do not treat a temporarily unresolved user as signed out.
+    if (sessionLoading) {
+      setLoading(true);
+      return () => {
+        cancelled = true;
+      };
     }
+
+    if (!user) {
+      setData(null);
+      setError(null);
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    // Clear the previous user's dossier and any prior error before fetching.
+    setLoading(true);
+    setData(null);
+    setError(null);
 
     (async () => {
       try {
@@ -84,8 +103,10 @@ export default function TrustReport() {
       }
     })();
 
-    return () => { cancelled = true; };
-  }, [user?.id]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, sessionLoading]);
 
   const latestSubmission = data?.verificationSubmissions[0];
   const confirmedSubmissions = useMemo(
