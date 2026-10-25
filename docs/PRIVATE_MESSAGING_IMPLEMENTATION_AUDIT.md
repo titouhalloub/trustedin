@@ -37,7 +37,7 @@ The messaging-specific plan must not silently migrate or delete credential-verif
 
 - Root `package.json` identifies a Next.js 14 Pages Router application with React 18 and `@supabase/supabase-js ^2.45.0`.
 - The repository's `README.md` describes Supabase Postgres/Auth/Storage and additional event/graph infrastructure, but its setup instructions may be stale and do not prove which services are currently deployed.
-- No local checkout, installed dependencies, running test suite, Supabase project connection, database schema, Storage policies, or Realtime authorization policies were available during this source-only audit. No build or test is claimed.
+- At the time of the initial source audit, no local checkout, installed dependencies, or live Supabase connection were available. The later read-only live project inspection is documented below. CI verification is recorded separately in the PR and must be interpreted per commit.
 
 ## Security-sensitive issue to investigate
 
@@ -68,7 +68,7 @@ The branch `feat/p2p-first-messaging-foundation` contains the first isolated fou
 
 **Not yet implemented:** production E2EE, peer/device authentication, authorized signaling adapter, chunked/resumable attachments, UI integration, optional cloud provider integration, multi-device key management/history sync, or migration of current plaintext messages and media. The existing chat UI intentionally remains unchanged in this first increment.
 
-**Verification status:** source changes were committed to the feature branch, but a local checkout/build/test run could not be performed in this environment because GitHub network access was unavailable. Treat the code as unverified until CI or a local checkout passes type-check, lint, and tests. No production behavior is claimed to have changed.
+**Verification status:** the first SFT-Dev CI run caught a transport type error and missing Next.js image type references; both were addressed. A later run passed type-check, lint, and Jest tests, but the build failed during prerender because CI lacked Supabase public environment variables. The workflow now uses Node 22 and build-only placeholder Supabase values; the run for the latest workflow changes is pending. Do not claim full verification until that run completes successfully. No production behavior is claimed to have changed.
 
 
 ## Additional repository checks
