@@ -8,6 +8,10 @@
  */
 
 const MAX_ENCRYPTED_PAYLOAD_BYTES = 16 * 1024;
+const MAX_SIGNAL_SDP_BYTES = 64 * 1024;
+const MAX_ICE_CANDIDATE_BYTES = 4 * 1024;
+const MAX_PENDING_ICE_CANDIDATES = 256;
+const MAX_BUFFERED_BYTES = 1024 * 1024;
 
 export type P2PSignal =
   | { kind: 'description'; description: RTCSessionDescriptionInit }
@@ -21,6 +25,42 @@ export interface P2PDataChannelOptions {
   onError?: (error: Error) => void;
   /** STUN servers only. TURN is rejected to preserve the strict direct-P2P policy. */
   iceServers?: RTCIceServer[];
+}
+
+function validateSignal(signal: P2PSignal): void {
+  if (!signal || typeof signal !== 'object') {
+    throw new Error('Invalid P2P signaling payload.');
+  }
+
+  if (signal.kind === 'description') {
+    const description = signal.description;
+    if (
+      !description ||
+      !['offer', 'answer', 'pranswer', 'rollback'].includes(description.type ?? '') ||
+      typeof description.sdp !== 'string' ||
+      description.sdp.length === 0 ||
+      description.sdp.length > MAX_SIGNAL_SDP_BYTES
+    ) {
+      throw new Error('Invalid or oversized WebRTC session description.');
+    }
+    return;
+  }
+
+  if (signal.kind === 'candidate') {
+    const candidate = signal.candidate;
+    if (
+      !candidate ||
+      typeof candidate !== 'object' ||
+      typeof candidate.candidate !== 'string' ||
+      candidate.candidate.length === 0 ||
+      candidate.candidate.length > MAX_ICE_CANDIDATE_BYTES
+    ) {
+      throw new Error('Invalid or oversized ICE candidate.');
+    }
+    return;
+  }
+
+  throw new Error('Unsupported P2P signaling message kind.');
 }
 
 function assertStunOnly(servers: RTCIceServer[] = []): RTCIceServer[] {
@@ -92,11 +132,15 @@ export class P2PDataChannel {
    */
   async handleSignal(signal: P2PSignal): Promise<void> {
     this.ensureOpen();
+    validateSignal(signal);
 
     if (signal.kind === 'candidate') {
       if (this.peer.remoteDescription) {
         await this.peer.addIceCandidate(signal.candidate);
       } else {
+        if (this.pendingCandidates.length >= MAX_PENDING_ICE_CANDIDATES) {
+          throw new Error('Too many ICE candidates arrived before the remote description.');
+        }
         this.pendingCandidates.push(signal.candidate);
       }
       return;
@@ -123,6 +167,9 @@ export class P2PDataChannel {
     }
     if (ciphertext.byteLength > MAX_ENCRYPTED_PAYLOAD_BYTES) {
       throw new Error('Encrypted payload exceeds 16 KiB. Chunked attachment transfer is not implemented yet.');
+    }
+    if (this.channel.bufferedAmount + ciphertext.byteLength > MAX_BUFFERED_BYTES) {
+      throw new Error('P2P send buffer is full. Retry after the channel drains.');
     }
     this.channel.send(ciphertext);
   }
