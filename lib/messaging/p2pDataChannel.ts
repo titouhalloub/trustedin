@@ -36,7 +36,7 @@ function validateSignal(signal: P2PSignal): void {
     const description = signal.description;
     if (
       !description ||
-      !['offer', 'answer', 'pranswer', 'rollback'].includes(description.type ?? '') ||
+      !['offer', 'answer'].includes(description.type ?? '') ||
       typeof description.sdp !== 'string' ||
       description.sdp.length === 0 ||
       description.sdp.length > MAX_SIGNAL_SDP_BYTES
@@ -52,7 +52,6 @@ function validateSignal(signal: P2PSignal): void {
       !candidate ||
       typeof candidate !== 'object' ||
       typeof candidate.candidate !== 'string' ||
-      candidate.candidate.length === 0 ||
       candidate.candidate.length > MAX_ICE_CANDIDATE_BYTES
     ) {
       throw new Error('Invalid or oversized ICE candidate.');
