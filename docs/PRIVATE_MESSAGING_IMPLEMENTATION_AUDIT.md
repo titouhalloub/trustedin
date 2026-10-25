@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-25  
 **Branch:** `feat/p2p-first-messaging-foundation`  
-**Audit basis:** Current files fetched from the repository's `main` branch. This is a source-level audit, not a local build or database inspection.
+**Audit basis:** Source review of the original `main` branch plus the read-only live Supabase inspection and CI checks recorded below. Findings are separated by evidence source; CI status is tracked in the PR and may change with each commit.
 
 ## Findings confirmed from source
 
@@ -23,7 +23,7 @@ In `components/messaging/ChatWindow.tsx`, text is inserted into the Supabase `me
 
 In `components/messaging/ChatWindow.tsx`, attachments are uploaded to the `chat_media` bucket. The client then obtains a public URL with `getPublicUrl` and saves that URL in the message row.
 
-**Impact:** this is incompatible with the agreed default. The existing bucket's actual public/private configuration and Storage RLS policies have not yet been inspected. Do not assume the bucket is public solely because `getPublicUrl` is called, but treat public URL generation as a risk requiring review.
+**Impact:** this is incompatible with the agreed default. A subsequent read-only live Supabase inspection confirmed `chat_media` is configured as a public bucket. Do not change it until the existing attachment path has a backward-compatible migration plan.
 
 ### 4. Existing features that must be preserved
 
@@ -75,8 +75,8 @@ The branch `feat/p2p-first-messaging-foundation` contains the first isolated fou
 
 - `supabase/migrations/` currently lists only `20261025013441_professional_verification_invitations.sql`; it does not contain a messaging schema migration.
 - `supabase/policies` is intentionally blank. The repository therefore does not provide the conversation membership RLS rules needed to safely authorize a private signaling channel. Do not invent policies against guessed table/column names; inspect the live schema or establish a committed source of truth first.
-- No `.github/workflows/` directory was found at the repository root. Do not assume automated CI currently type-checks or tests this branch.
-- `package.json` has Jest and ts-jest dependencies and a `test` script, but no Jest configuration was found at the root. Test execution setup should be checked before relying on the script.
+- `.github/workflows/sft-dev.yml` now runs the repository's `sft-dev.js` tester on pull requests and pushes to the feature branch and `main`.
+- SFT-Dev runs type-check, lint, build, and Jest tests. The initial CI run exposed a P2P TypeScript error, which was fixed; a subsequent run passed type-check, lint, and tests but failed Next.js prerendering because CI lacked Supabase environment variables. The workflow now supplies build-only placeholders and uses Node 22; verify the next run before claiming the full pipeline passes.
 
 ## End-to-end encryption library gate
 
