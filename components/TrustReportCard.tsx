@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Award, ArrowUpRight, Shield, TrendingUp, User, UserCheck } from 'lucide-react';
@@ -42,6 +42,7 @@ const reasonText: { [key:string]: string } = {
 }
 
 export function TrustReportCard({ userId }: TrustReportCardProps) {
+  const router = useRouter();
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,8 +80,19 @@ export function TrustReportCard({ userId }: TrustReportCardProps) {
   const chartData = history.map(h => ({ name: new Date(h.created_at).toLocaleDateString(), score: h.new_score })).reverse();
 
   return (
-    <Link href="/trust-report" className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" aria-label="Open your full Trust Report">
-    <Card className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-md">
+    <Card
+      role="link"
+      tabIndex={0}
+      aria-label="Open your full Trust Report"
+      onClick={() => router.push('/trust-report')}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          router.push('/trust-report');
+        }
+      }}
+      className="group cursor-pointer rounded-xl transition-all hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+    >
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Trust Report</span>
@@ -136,6 +148,5 @@ export function TrustReportCard({ userId }: TrustReportCardProps) {
         <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
       </div>
     </Card>
-    </Link>
   );
 }
