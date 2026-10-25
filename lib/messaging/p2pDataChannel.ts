@@ -53,7 +53,8 @@ export class P2PDataChannel {
 
     this.peer.onicecandidate = (event) => {
       if (!event.candidate || this.closed) return;
-      void this.emitSignal({ kind: 'candidate', candidate: event.candidate.toJSON() });
+      // ICE callbacks are event-driven; prevent rejected signaling promises from becoming unhandled.
+      void this.emitSignal({ kind: 'candidate', candidate: event.candidate.toJSON() }).catch(() => undefined);
     };
 
     this.peer.onconnectionstatechange = () => {
