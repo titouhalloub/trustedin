@@ -30,7 +30,12 @@ export default function AcceptProfessionalVerificationPage() {
   const [completed, setCompleted] = useState<'approve' | 'decline' | null>(null);
 
   useEffect(() => {
-    if (!router.isReady || !token) return;
+    if (!router.isReady) return;
+    if (!token) {
+      setPageError('This invitation link is missing its token.');
+      setLoadingInvitation(false);
+      return;
+    }
     let cancelled = false;
     setLoadingInvitation(true);
     fetch('/api/verifications/professional/accept?token=' + encodeURIComponent(token))
