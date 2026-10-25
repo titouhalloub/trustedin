@@ -14,6 +14,7 @@ const VERSION = 1;
 const HEADER_BYTES = 67;
 export const DEFAULT_TRANSFER_CHUNK_BYTES = 8 * 1024;
 export const MAX_TRANSFER_BYTES = 100 * 1024 * 1024;
+const MAX_TOTAL_IN_FLIGHT_TRANSFER_BYTES = 100 * 1024 * 1024;
 export const MAX_TRANSFER_CHUNKS = 16_384;
 
 export interface TransferChunkMetadata {
@@ -148,8 +149,7 @@ export function decodeTransferChunkFrame(frame: ArrayBuffer): DecodedTransferChu
     chunkBytes < 1 ||
     chunkBytes > DEFAULT_TRANSFER_CHUNK_BYTES ||
     payload.byteLength !== chunkBytes ||
-    totalChunks !== Math.ceil(totalBytes / DEFAULT_TRANSFER_CHUNK_BYTES) &&
-      (totalChunks - 1) * DEFAULT_TRANSFER_CHUNK_BYTES >= totalBytes
+    totalChunks !== Math.ceil(totalBytes / DEFAULT_TRANSFER_CHUNK_BYTES)
   ) {
     throw new Error('Invalid transfer chunk bounds.');
   }
@@ -218,6 +218,11 @@ export class EncryptedTransferAssembler {
     if (!state) {
       if (this.transfers.size >= this.maxConcurrentTransfers) {
         throw new Error('Too many concurrent incoming transfers.');
+      }
+      const inFlightBytes = Array.from(this.transfers.values())
+        .reduce((total, transfer) => total + transfer.totalBytes, 0);
+      if (inFlightBytes + chunk.totalBytes > MAX_TOTAL_IN_FLIGHT_TRANSFER_BYTES) {
+        throw new Error('Incoming transfers exceed the aggregate in-memory size limit.');
       }
       state = {
         transferId: chunk.transferId,
