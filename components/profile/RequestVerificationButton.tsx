@@ -1,6 +1,5 @@
-// /components/profile/RequestVerificationButton.tsx
 import { useState } from 'react';
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -25,8 +24,8 @@ export default function RequestVerificationButton({ relatedEntityId }: RequestVe
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setIsLoading(true);
     try {
       const response = await fetch('/api/verifications/professional/request', {
@@ -39,22 +38,19 @@ export default function RequestVerificationButton({ relatedEntityId }: RequestVe
       });
 
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'An unknown error occurred.');
-      }
+      if (!response.ok) throw new Error(result.error || 'Could not send the invitation.');
 
       toast({
-        title: 'Request Sent!',
-        description: `Your verification request has been sent to ${verifierEmail}.`,
+        title: 'Invitation sent',
+        description: 'A TrustedIn verification invitation was sent to ' + verifierEmail + '. Ask them to check their inbox and spam folder if needed.',
       });
       setIsOpen(false);
       setVerifierEmail('');
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Failed to Send Request',
-        description: error.message,
+        title: 'Invitation failed',
+        description: error.message || 'Could not send the invitation.',
       });
     } finally {
       setIsLoading(false);
@@ -71,21 +67,29 @@ export default function RequestVerificationButton({ relatedEntityId }: RequestVe
           <DialogHeader>
             <DialogTitle>Request Professional Verification</DialogTitle>
             <DialogDescription>
-              Enter the email of a manager, colleague, or HR representative who can verify this experience.
+              Enter the work email of a manager, colleague, or HR representative who can verify this experience. We will email them a secure TrustedIn link. They can create an account if they are new, then review and respond to your request.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="verifier-email" className="text-right">Verifier's Email</Label>
-                <Input id="verifier-email" type="email" value={verifierEmail} onChange={(e) => setVerifierEmail(e.target.value)} className="col-span-3" placeholder="manager@example.com" required />
+                <Label htmlFor="verifier-email" className="text-right">Professional email</Label>
+                <Input
+                  id="verifier-email"
+                  type="email"
+                  value={verifierEmail}
+                  onChange={(event) => setVerifierEmail(event.target.value)}
+                  className="col-span-3"
+                  placeholder="manager@company.com"
+                  required
+                />
               </div>
             </div>
             <DialogFooter>
               <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                Send Request
+                Send invitation
               </Button>
             </DialogFooter>
           </form>
