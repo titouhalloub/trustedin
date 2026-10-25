@@ -27,7 +27,7 @@ export interface P2PDataChannelOptions {
   iceServers?: RTCIceServer[];
 }
 
-function validateSignal(signal: P2PSignal): void {
+export function validateP2PSignal(signal: P2PSignal): void {
   if (!signal || typeof signal !== 'object') {
     throw new Error('Invalid P2P signaling payload.');
   }
@@ -62,7 +62,7 @@ function validateSignal(signal: P2PSignal): void {
   throw new Error('Unsupported P2P signaling message kind.');
 }
 
-function assertStunOnly(servers: RTCIceServer[] = []): RTCIceServer[] {
+export function validateStunOnlyIceServers(servers: RTCIceServer[] = []): RTCIceServer[] {
   for (const server of servers) {
     const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
     for (const url of urls) {
@@ -89,7 +89,7 @@ export class P2PDataChannel {
     }
 
     this.peer = new RTCPeerConnection({
-      iceServers: assertStunOnly(options.iceServers),
+      iceServers: validateStunOnlyIceServers(options.iceServers),
     });
 
     this.peer.onicecandidate = (event) => {
@@ -131,7 +131,7 @@ export class P2PDataChannel {
    */
   async handleSignal(signal: P2PSignal): Promise<void> {
     this.ensureOpen();
-    validateSignal(signal);
+    validateP2PSignal(signal);
 
     if (signal.kind === 'candidate') {
       if (this.peer.remoteDescription) {
