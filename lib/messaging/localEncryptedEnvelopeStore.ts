@@ -56,7 +56,7 @@ function runTransaction<T>(
   return openDatabase().then((database) => new Promise<T>((resolve, reject) => {
     const transaction = database.transaction(ENVELOPE_STORE, mode);
     const request = operation(transaction.objectStore(ENVELOPE_STORE));
-    let result: T;
+    let result: T | undefined;
 
     request.onsuccess = () => {
       result = request.result;
@@ -64,7 +64,7 @@ function runTransaction<T>(
     request.onerror = () => reject(request.error ?? new Error('Local message-store operation failed.'));
     transaction.oncomplete = () => {
       database.close();
-      resolve(result);
+      resolve(result as T);
     };
     transaction.onerror = () => {
       database.close();
