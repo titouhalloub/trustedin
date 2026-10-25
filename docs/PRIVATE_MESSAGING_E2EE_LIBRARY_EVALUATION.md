@@ -42,3 +42,36 @@ The repository's current package manifest reports version `13.2.0`, a browser ex
 ## Why this is not yet a final selection
 
 The candidate is recent and its protocol/security surface is substantial. Upstream claims and repository tests are useful evidence but cannot independently establish security. TrustedIn's architecture also requires strict direct-P2P defaults and no silent content relay, so compatibility with the SDK's delivery model must be proven in a working spike. Until those gates pass, keep the current chat unchanged and do not label the product end-to-end encrypted.
+
+
+## Sandbox integration findings (2026-10-25)
+
+The upstream source and documentation were inspected for the current main revision; this was a source-level compatibility review, not a runnable browser spike and not an independent cryptographic audit.
+
+### Browser persistence options
+
+The SDK documents two browser stores:
+
+- `@open-e2ee/signal-protocol-sdk/local/store/web` uses IndexedDB and Web Crypto. Its documented design encrypts records with AES-256-GCM, but keeps the record-encryption key in IndexedDB on the same origin. The SDK explicitly classifies that as co-located custody: it helps protect a copied database without the key, but it does not protect against XSS or compromised same-origin JavaScript.
+- `@open-e2ee/signal-protocol-sdk/local/store/web-sqlite` uses SQLite/WASM in OPFS and a key held in an IndexedDB vault. It requires browser OPFS support and a Content Security Policy permitting `'wasm-unsafe-eval'`. This creates additional deployment and browser-compatibility gates for the current Next.js application.
+
+Neither adapter eliminates the need for TrustedIn's CSP, dependency/XSS controls, account-reset behavior, and explicit recovery policy. The existing local envelope store is not a replacement for the SDK's atomic ratchet-state store; those stores have different responsibilities.
+
+### Delivery architecture compatibility
+
+The public SignalProtocolRelayServer contract includes device registration/listing, identity-key provisioning/rotation, prekey upload/fetch and inventory, envelope send/subscription/acknowledgement, and group-related operations. It is an application-owned integration surface, not a small callback that can simply be pointed at the current WebRTC DataChannel.
+
+The SDK defines delivery classes including `ephemeral`, so an online-only envelope path may be possible. However, this does not prove that the SDK can meet TrustedIn's strict no-content-relay policy without a custom transport that delivers the envelope directly through the authenticated P2P connection. The actual call path, retries, acknowledgement semantics, recipient device fan-out, and behavior when a recipient is offline must be tested. Do not use the hosted OpenE2EE relay as a default or silently persist ciphertext on TrustedIn infrastructure.
+
+### Current decision
+
+**Do not install the SDK into the production dependency graph yet.** Continue with a separate sandbox branch/spike that pins an exact package version and demonstrates:
+
+1. Browser bundle compatibility with this repository's Next.js 14 / React 18 build.
+2. Two independent device stores and a complete encrypt → direct transfer → decrypt round trip.
+3. A custom relay/transport adapter that uses authenticated account/device metadata for prekeys and identity, while sending message envelopes only over a live direct P2P channel.
+4. Explicit behavior for offline recipients: wait/retry only, unless the user opts into a separately designed encrypted cloud-storage path.
+5. Atomic protocol-store persistence, identity verification, key changes, replay/reordering, device revocation, and recovery tests.
+6. A documented CSP and a decision between the IndexedDB store and OPFS/WASM store.
+
+If the SDK's protocol delivery contract cannot be adapted to direct P2P without persistent message-envelope delivery, reject it for this product requirement rather than weakening the no-relay policy. A custom relay implementation is security-critical and must be reviewed; do not stub security-sensitive methods as no-ops just to make the SDK compile.
