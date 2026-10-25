@@ -69,3 +69,17 @@ The branch `feat/p2p-first-messaging-foundation` contains the first isolated fou
 **Not yet implemented:** production E2EE, peer/device authentication, authorized signaling adapter, chunked/resumable attachments, UI integration, optional cloud provider integration, multi-device key management/history sync, or migration of current plaintext messages and media. The existing chat UI intentionally remains unchanged in this first increment.
 
 **Verification status:** source changes were committed to the feature branch, but a local checkout/build/test run could not be performed in this environment because GitHub network access was unavailable. Treat the code as unverified until CI or a local checkout passes type-check, lint, and tests. No production behavior is claimed to have changed.
+
+
+## Additional repository checks
+
+- `supabase/migrations/` currently lists only `20261025013441_professional_verification_invitations.sql`; it does not contain a messaging schema migration.
+- `supabase/policies` is intentionally blank. The repository therefore does not provide the conversation membership RLS rules needed to safely authorize a private signaling channel. Do not invent policies against guessed table/column names; inspect the live schema or establish a committed source of truth first.
+- No `.github/workflows/` directory was found at the repository root. Do not assume automated CI currently type-checks or tests this branch.
+- `package.json` has Jest and ts-jest dependencies and a `test` script, but no Jest configuration was found at the root. Test execution setup should be checked before relying on the script.
+
+## End-to-end encryption library gate
+
+The application is a browser-based Next.js client. The official [Signal libsignal README](https://github.com/signalapp/libsignal) says the library is used by Signal clients and that use outside Signal is unsupported; its NPM TypeScript binding is distributed as a native Node add-on, not a browser build. Therefore it cannot be adopted blindly as a browser dependency.
+
+Do not fall back to a hand-written crypto protocol or an unmaintained JavaScript port. Evaluate browser-compatible candidates for maintenance, threat model, independent audit status, license, supported multi-device behavior, and build compatibility. Record the decision and license review before adding the dependency. WebRTC DTLS protects the direct transport but does not, by itself, provide TrustedIn's required long-term identity verification, prekey/session protocol, key-change handling, or secure multi-device history bootstrap.
