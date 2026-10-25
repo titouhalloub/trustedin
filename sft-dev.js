@@ -1,8 +1,9 @@
 // sft-dev.js
 import { exec } from "child_process";
 import chalk from "chalk";
+import path from "node:path";
 
-process.env.PATH = `${process.cwd()}\\node_modules\\.bin;${process.env.PATH}`;
+process.env.PATH = `${path.join(process.cwd(), "node_modules", ".bin")}${path.delimiter}${process.env.PATH}`;
 
 const tasks = [
   { name: "Type Check", command: "tsc --noEmit" },
@@ -16,7 +17,7 @@ let results = [];
 function runTask(task) {
   return new Promise((resolve) => {
     console.log(chalk.blue(`\n▶ Running: ${task.name}...\n`));
-    exec(task.command, (error, stdout, stderr) => {
+    exec(task.command, { timeout: 10 * 60 * 1000, maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
       if (error) {
         console.log(chalk.red(`❌ ${task.name} failed`));
         if (stderr) console.log(chalk.gray(stderr));

@@ -27,7 +27,6 @@
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
 
 # local diagnostic logs
 *.log
