@@ -170,7 +170,15 @@ export class P2PDataChannel {
     if (this.channel.bufferedAmount + ciphertext.byteLength > MAX_BUFFERED_BYTES) {
       throw new Error('P2P send buffer is full. Retry after the channel drains.');
     }
-    this.channel.send(ciphertext);
+    // Normalize to a fresh ArrayBuffer-backed view. This also prevents the caller
+    // from mutating a Uint8Array's backing buffer while the browser queues it.
+    const payload = new Uint8Array(ciphertext.byteLength);
+    if (ciphertext instanceof ArrayBuffer) {
+      payload.set(new Uint8Array(ciphertext));
+    } else {
+      payload.set(ciphertext);
+    }
+    this.channel.send(payload);
   }
 
   close(): void {
