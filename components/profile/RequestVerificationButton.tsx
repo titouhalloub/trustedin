@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Send } from 'lucide-react';
+import { Copy, Loader2, Send } from 'lucide-react';
 
 interface RequestVerificationButtonProps {
   relatedEntityId: string;
@@ -22,6 +22,7 @@ export default function RequestVerificationButton({ relatedEntityId }: RequestVe
   const [isOpen, setIsOpen] = useState(false);
   const [verifierEmail, setVerifierEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [shareLink, setShareLink] = useState('');
   const { toast } = useToast();
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -40,12 +41,21 @@ export default function RequestVerificationButton({ relatedEntityId }: RequestVe
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Could not send the invitation.');
 
-      toast({
-        title: 'Invitation sent',
-        description: 'A TrustedIn verification invitation was sent to ' + verifierEmail + '. Ask them to check their inbox and spam folder if needed.',
-      });
-      setIsOpen(false);
-      setVerifierEmail('');
+      if (result.emailSent === false && typeof result.inviteUrl === 'string') {
+        setShareLink(result.inviteUrl);
+        toast({
+          title: 'Invitation link created',
+          description: 'Email delivery is unavailable right now. Copy the secure link below and send it to the verifier yourself.',
+        });
+      } else {
+        toast({
+          title: 'Invitation email sent',
+          description: 'A TrustedIn verification invitation was sent to ' + verifierEmail + '. Ask them to check their inbox and spam folder if needed.',
+        });
+        setIsOpen(false);
+        setVerifierEmail('');
+        setShareLink('');
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -67,30 +77,55 @@ export default function RequestVerificationButton({ relatedEntityId }: RequestVe
           <DialogHeader>
             <DialogTitle>Request Professional Verification</DialogTitle>
             <DialogDescription>
-              Enter the work email of a manager, colleague, or HR representative who can verify this experience or education entry. We will email them a secure TrustedIn link. They can create an account if they are new, then review and respond to your request.
+              Enter the work email of a manager, colleague, or HR representative who can verify this experience or education entry. We will email a secure TrustedIn link when delivery is available. If email delivery is blocked, you can copy the link and send it yourself.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="verifier-email" className="text-right">Professional email</Label>
-                <Input
-                  id="verifier-email"
-                  type="email"
-                  value={verifierEmail}
-                  onChange={(event) => setVerifierEmail(event.target.value)}
-                  className="col-span-3"
-                  placeholder="manager@company.com"
-                  required
-                />
-              </div>
+              {!shareLink && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="verifier-email" className="text-right">Professional email</Label>
+                  <Input
+                    id="verifier-email"
+                    type="email"
+                    value={verifierEmail}
+                    onChange={(event) => setVerifierEmail(event.target.value)}
+                    className="col-span-3"
+                    placeholder="manager@company.com"
+                    required
+                  />
+                </div>
+              )}
+              {shareLink && (
+                <div className="grid gap-2">
+                  <p className="text-sm font-medium">Share this secure verification link</p>
+                  <Input aria-label="Secure verification link" readOnly value={shareLink} />
+                  <p className="text-sm text-muted-foreground">The link expires in 7 days. The verifier must sign in with {verifierEmail.trim()} to respond.</p>
+                  <Button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(shareLink);
+                        toast({ title: 'Link copied', description: 'Send the copied link to the intended verifier.' });
+                      } catch {
+                        toast({ variant: 'destructive', title: 'Could not copy link', description: 'Select and copy the link from the field above.' });
+                      }
+                    }}
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy verification link
+                  </Button>
+                </div>
+              )}
             </div>
             <DialogFooter>
-              <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                Send invitation
-              </Button>
+              <Button type="button" variant="secondary" onClick={() => { setIsOpen(false); setShareLink(''); }}>Close</Button>
+              {!shareLink && (
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  Send invitation
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </DialogContent>
