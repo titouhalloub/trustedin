@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Award, Shield, TrendingUp, User, UserCheck } from 'lucide-react';
+import { Award, ArrowUpRight, Shield, TrendingUp, User, UserCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -78,7 +79,8 @@ export function TrustReportCard({ userId }: TrustReportCardProps) {
   const chartData = history.map(h => ({ name: new Date(h.created_at).toLocaleDateString(), score: h.new_score })).reverse();
 
   return (
-    <Card>
+    <Link href="/trust-report" className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" aria-label="Open your full Trust Report">
+    <Card className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Trust Report</span>
@@ -129,6 +131,11 @@ export function TrustReportCard({ userId }: TrustReportCardProps) {
           )}
         </div>
       </CardContent>
+      <div className="flex items-center justify-between border-t px-6 py-3 text-sm font-medium text-primary">
+        <span>View full Trust Report</span>
+        <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+      </div>
     </Card>
+    </Link>
   );
 }
