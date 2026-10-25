@@ -183,13 +183,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!emailResponse.ok) {
       const providerError = await emailResponse.text();
       console.error('Resend failed to send professional verification invitation:', providerError);
-      await admin.from('professional_verification_invitations').delete().eq('id', invitation.id);
-      return res.status(502).json({ error: 'TrustedIn could not send the invitation email. Please try again later.' });
+
+      // Keep the invitation alive so the candidate can share the secure link manually.
+      // The token is only returned to the authenticated candidate; the database stores its hash.
+      return res.status(201).json({
+        message: 'Invitation link created, but email delivery failed.',
+        email,
+        emailSent: false,
+        inviteUrl,
+      });
     }
 
     return res.status(201).json({
       message: 'Invitation email sent.',
       email,
+      emailSent: true,
     });
   } catch (error: any) {
     console.error('Error creating professional verification invitation:', error);
