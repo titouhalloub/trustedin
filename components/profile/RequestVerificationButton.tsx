@@ -68,7 +68,7 @@ export default function RequestVerificationButton({ relatedEntityId }: RequestVe
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setIsOpen(true)}>
+      <Button variant="outline" size="sm" onClick={() => { setShareLink(''); setVerifierEmail(''); setIsOpen(true); }}>
         Request Verification
       </Button>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
