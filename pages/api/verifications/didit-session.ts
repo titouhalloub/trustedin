@@ -1,5 +1,5 @@
-// pages/api/verifications/didit-session.ts
-import { NextApiRequest, NextApiResponse } from 'next';
+// Creates a Didit session and records its provider session ID before returning the URL.
+import type { NextApiRequest, NextApiResponse } from 'next';
 import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -10,25 +10,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const supabase = createPagesServerClient({ req, res });
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return res.status(401).json({ error: 'Unauthorized' });
 
-    if (!user) return res.status(401).json({ error: 'Unauthorized' });
-
-    // Fetch profile for metadata
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id, username, full_name, avatar_url, bio')
       .eq('id', user.id)
       .single();
-
-    if (!profile) return res.status(404).json({ error: 'Profile not found' });
+    if (profileError || !profile) return res.status(404).json({ error: 'Profile not found' });
 
     const diditApiKey = process.env.DIDIT_API_KEY;
-    if (!diditApiKey) throw new Error('Didit API key not configured');
+    if (!diditApiKey) {
+      console.error('Didit API key is not configured.');
+      return res.status(503).json({ error: 'Verification provider is not configured.' });
+    }
 
-    // Build payload
     const payload = {
-      workflow_id: "177924b6-47b3-4744-807e-ea195de3ad3d",
+      workflow_id: '177924b6-47b3-4744-807e-ea195de3ad3d',
       vendor_data: profile.id,
       callback: `${process.env.NEXT_PUBLIC_SITE_URL}/settings/verification/callback`,
       metadata: JSON.stringify({
@@ -39,38 +38,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         bio: profile.bio,
       }),
       language: 'en',
-      contact_details: {
-        email: user.email,
-      },
+      contact_details: { email: user.email },
     };
-
-    console.log('Creating Didit session with payload:', payload);
 
     const response = await fetch('https://verification.didit.me/v2/session/', {
       method: 'POST',
       headers: {
-        'accept': 'application/json',
+        accept: 'application/json',
         'content-type': 'application/json',
         'x-api-key': diditApiKey,
       },
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
+    const providerResponse = await response.json();
+    const sessionUrl = providerResponse.verification_url || providerResponse.url;
+    const providerSessionId = providerResponse.session_id || providerResponse.id;
 
-    console.log('Didit raw response:', data);
+    if (!response.ok || !sessionUrl || !providerSessionId) {
+      console.error('Didit session creation failed.');
+      return res.status(502).json({ error: 'Could not create a verification session.' });
+    }
 
-    const sessionUrl = data.verification_url || data.url;
-    if (!response.ok || !sessionUrl) {
-      console.error('Failed to create Didit session:', data);
-      throw new Error(data.message || 'Failed to create Didit session');
+    // Store the exact provider session association. The document URL is intentionally null:
+    // a provider session is not a user-uploaded document.
+    const { error: insertError } = await supabase.from('verification_submissions').insert({
+      user_id: user.id,
+      verification_type: 'didit',
+      target_entity_id: null,
+      document_url: null,
+      status: 'pending',
+      provider_session_id: String(providerSessionId),
+    });
+    if (insertError) {
+      console.error('Could not persist Didit session association.');
+      return res.status(500).json({ error: 'Could not save verification session.' });
     }
 
     return res.status(200).json({ session_url: sessionUrl });
-
-  } catch (error: any) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Didit session handler error:', message);
-    return res.status(500).json({ error: `Failed to create Didit session: ${message}` });
+  } catch {
+    console.error('Didit session handler failed.');
+    return res.status(500).json({ error: 'Could not create a verification session.' });
   }
 }
