@@ -79,7 +79,7 @@ export function TrustReportCard({ userId }: TrustReportCardProps) {
   const chartData = history.map(h => ({ name: new Date(h.created_at).toLocaleDateString(), score: h.new_score })).reverse();
 
   return (
-    <Link href="/trust-report" className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" aria-label="Open your full Trust Report">
+    <Link href="/trust-report" className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" aria-label="Open your full Trust Report">
     <Card className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
