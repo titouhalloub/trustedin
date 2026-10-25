@@ -192,14 +192,31 @@ export class P2PDataChannel {
     this.channel = channel;
     channel.binaryType = 'arraybuffer';
     channel.onmessage = (event: MessageEvent<ArrayBuffer>) => {
-      if (event.data instanceof ArrayBuffer) {
-        this.options.onEncryptedPayload(event.data);
-      } else {
+      if (!(event.data instanceof ArrayBuffer)) {
         this.options.onError?.(new Error('Unexpected non-binary payload on encrypted data channel.'));
+        return;
+      }
+      if (event.data.byteLength === 0 || event.data.byteLength > MAX_ENCRYPTED_PAYLOAD_BYTES) {
+        this.options.onError?.(new Error('Rejected empty or oversized inbound P2P payload.'));
+        return;
+      }
+
+      try {
+        this.options.onEncryptedPayload(event.data);
+      } catch (cause) {
+        const error = cause instanceof Error
+          ? cause
+          : new Error('Failed to process inbound encrypted P2P payload.');
+        this.options.onError?.(error);
       }
     };
     channel.onerror = () => {
       this.options.onError?.(new Error('P2P data channel error.'));
+    };
+    channel.onclose = () => {
+      if (!this.closed) {
+        this.options.onError?.(new Error('Direct P2P data channel closed. No relay fallback was attempted.'));
+      }
     };
   }
 
