@@ -165,23 +165,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       'Review the request and confirm only if you can genuinely verify this experience or education: ' + inviteUrl + '\n\n' +
       'You can create a TrustedIn account through this link. Opening it does not verify the claim by itself. The invitation expires in 7 days.';
 
-    const emailResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer ' + resendApiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: [email],
-        subject: candidateName + ' invited you to verify a professional claim on TrustedIn',
-        html,
-        text: textBody,
-      }),
-    });
+    let emailResponse: Response | null = null;
+    let emailDeliveryError = '';
 
-    if (!emailResponse.ok) {
-      const providerError = await emailResponse.text();
+    try {
+      emailResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + resendApiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [email],
+          subject: candidateName + ' invited you to verify a professional claim on TrustedIn',
+          html,
+          text: textBody,
+        }),
+      });
+    } catch (error) {
+      emailDeliveryError = error instanceof Error ? error.message : 'Unknown email provider error';
+    }
+
+    if (!emailResponse || !emailResponse.ok) {
+      const providerError = emailResponse ? await emailResponse.text() : emailDeliveryError;
       console.error('Resend failed to send professional verification invitation:', providerError);
 
       // Keep the invitation alive so the candidate can share the secure link manually.
