@@ -68,7 +68,7 @@ The branch `feat/p2p-first-messaging-foundation` contains the first isolated fou
 
 **Not yet implemented:** production E2EE, peer/device authentication, authorized signaling adapter, chunked/resumable attachments, UI integration, optional cloud provider integration, multi-device key management/history sync, or migration of current plaintext messages and media. The existing chat UI intentionally remains unchanged in this first increment.
 
-**Verification status:** the first SFT-Dev CI run caught a transport type error and missing Next.js image type references; both were addressed. A later run passed type-check, lint, and Jest tests, but the build failed during prerender because CI lacked Supabase public environment variables. The workflow now uses Node 22 and build-only placeholder Supabase values; the run for the latest workflow changes is pending. Do not claim full verification until that run completes successfully. No production behavior is claimed to have changed.
+**Verification status:** the first SFT-Dev CI run caught a transport type error and missing Next.js image type references; both were addressed. A later run passed type-check, lint, and Jest tests but failed during prerender because CI lacked Supabase public environment variables. The workflow now uses Node 22 and build-only placeholder Supabase values. SFT-Dev subsequently passed all four gates (type-check, lint, build, Jest tests) on commit `d91e13cfbf52c900381c796d5c7e593a63074da6`, including new P2P payload-copy and send-limit tests. A later change updated only the E2EE evaluation document. No production behavior is claimed to have changed.
 
 
 ## Additional repository checks
@@ -76,7 +76,7 @@ The branch `feat/p2p-first-messaging-foundation` contains the first isolated fou
 - `supabase/migrations/` currently lists only `20261025013441_professional_verification_invitations.sql`; it does not contain a messaging schema migration.
 - `supabase/policies` is intentionally blank. The repository therefore does not provide the conversation membership RLS rules needed to safely authorize a private signaling channel. Do not invent policies against guessed table/column names; inspect the live schema or establish a committed source of truth first.
 - `.github/workflows/sft-dev.yml` now runs the repository's `sft-dev.js` tester on pull requests and pushes to the feature branch and `main`.
-- SFT-Dev runs type-check, lint, build, and Jest tests. The initial CI run exposed a P2P TypeScript error, which was fixed; a subsequent run passed type-check, lint, and tests but failed Next.js prerendering because CI lacked Supabase environment variables. The workflow now supplies build-only placeholders and uses Node 22; verify the next run before claiming the full pipeline passes.
+- SFT-Dev runs type-check, lint, build, and Jest tests. After fixing the P2P TypeScript error, committing Next.js image type references, and supplying build-only placeholder Supabase variables on Node 22, all four gates passed on commit `d91e13cfbf52c900381c796d5c7e593a63074da6`. The subsequent E2EE evaluation update changed documentation only.
 
 ## End-to-end encryption library gate
 
