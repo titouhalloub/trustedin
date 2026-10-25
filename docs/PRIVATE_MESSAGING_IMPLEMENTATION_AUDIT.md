@@ -83,3 +83,19 @@ The branch `feat/p2p-first-messaging-foundation` contains the first isolated fou
 The application is a browser-based Next.js client. The official [Signal libsignal README](https://github.com/signalapp/libsignal) says the library is used by Signal clients and that use outside Signal is unsupported; its NPM TypeScript binding is distributed as a native Node add-on, not a browser build. Therefore it cannot be adopted blindly as a browser dependency.
 
 Do not fall back to a hand-written crypto protocol or an unmaintained JavaScript port. Evaluate browser-compatible candidates for maintenance, threat model, independent audit status, license, supported multi-device behavior, and build compatibility. Record the decision and license review before adding the dependency. WebRTC DTLS protects the direct transport but does not, by itself, provide TrustedIn's required long-term identity verification, prekey/session protocol, key-change handling, or secure multi-device history bootstrap.
+
+
+## Live Supabase project inspection (read-only)
+
+The connected Supabase project `Trustedin Project` (`qgcarphlabblhyembnbd`) was inspected with read-only schema queries on 2026-10-25. No database writes were made.
+
+- `public.messages` has `content text NOT NULL`, `media_url`, `media_type`, and `link_preview jsonb`. RLS is enabled.
+- The current `messages` SELECT and INSERT policies restrict rows to conversations where `auth.uid()` appears in `public.conversation_participants`. `conversations` SELECT is similarly membership-scoped; `conversation_participants` SELECT only exposes the caller's own participant rows.
+- `public.get_my_conversations_list()` is a `SECURITY DEFINER` SQL function and returns the last message's `content` in its JSON summary. Its query filters conversations by `auth.uid()`, but it still confirms that message plaintext is returned by the backend.
+- The Supabase Storage bucket `chat_media` is configured with `public = true`. The existing client uploads attachments there and calls `getPublicUrl`. This means the current chat attachment path does not meet the planned private-storage policy. No attempt was made to change the bucket because doing so before migrating the UI could break existing attachment links.
+- No RLS policies were returned for `realtime.messages` by the live policy query. A private Broadcast signaling channel therefore needs a deliberate membership-scoped authorization policy before it can be used. Supabase's current Realtime documentation recommends private channels and authorization policies on `realtime.messages`; see [Realtime Getting Started](https://supabase.com/docs/guides/realtime/getting_started) and [Realtime Authorization](https://supabase.com/docs/guides/realtime/authorization).
+- The live database migration history includes more migrations than the repository's checked-in `supabase/migrations/` directory. This is migration drift: reconcile the migration history before adding/applying database changes. Do not apply schema changes directly to production from this draft.
+
+### Operational warning
+
+The existing `chat_media` bucket being public is a concrete privacy risk for chat attachments. It should be addressed as part of a coordinated attachment migration. Do not upload sensitive content to it under the assumption that its URLs are private. This audit did not enumerate or expose any stored objects and did not change production settings.
