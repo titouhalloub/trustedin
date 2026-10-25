@@ -67,7 +67,7 @@ export default function RequestVerificationButton({ relatedEntityId }: RequestVe
           <DialogHeader>
             <DialogTitle>Request Professional Verification</DialogTitle>
             <DialogDescription>
-              Enter the work email of a manager, colleague, or HR representative who can verify this experience. We will email them a secure TrustedIn link. They can create an account if they are new, then review and respond to your request.
+              Enter the work email of a manager, colleague, or HR representative who can verify this experience or education entry. We will email them a secure TrustedIn link. They can create an account if they are new, then review and respond to your request.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
